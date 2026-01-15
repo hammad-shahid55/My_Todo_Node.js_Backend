@@ -1,11 +1,9 @@
 import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
+import { MONGODB_URI, DB_NAME, COLLECTION_NAME } from "./config/env.js";
 
-dotenv.config();
-
-const url = process.env.MONGODB_URI;
-const dbName = process.env.DB_NAME;
-export const collectionName = process.env.COLLECTION_NAME;
+const url = MONGODB_URI;
+const dbName = DB_NAME;
+export const collectionName = COLLECTION_NAME;
 
 if (!url) {
     throw new Error("Missing MONGODB_URI environment variable");
