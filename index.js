@@ -69,6 +69,27 @@ app.delete("/delete-task/:id", async (req, res) => {
 
 })
 
+app.put("/update-task/:id", async (req, res) => {
+    const db = await connection();
+    const collection = db.collection(collectionName);
+    const result = await collection.updateOne({_id: new ObjectId(req.params.id)}, {$set: req.body});
+    if (result) {
+        res.send({
+            message: "Task updated successfully",
+            success: true,
+            data: result
+        });
+    } else {
+        res.send({
+            message: "Task not updated",
+            success: false,
+            data: result
+        });
+    }
+
+})
+
+
 
 app.get("/", (req, res) => {
 
