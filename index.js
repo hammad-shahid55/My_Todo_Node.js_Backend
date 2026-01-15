@@ -6,10 +6,12 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
+const usersCollection=process.env.USERS_COLLECTION;
 
 
 app.use(express.json());
@@ -119,18 +121,17 @@ app.put("/update-task/:id", async (req, res) => {
 
 app.post("/signup", async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { fullName, email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
+        if (!fullName || !email || !password) {
+            return res.status(400).json({ message: "Full name, email, and password are required" });
         }
 
         if (!email.includes("@") || password.length < 6) {
             return res.status(400).json({ message: "Invalid email or weak password" });
         }
-
         const db = await connection();
-        const collection = db.collection("users");
+        const collection = db.collection(usersCollection);
 
         const existingUser = await collection.findOne({ email });
         if (existingUser) {
@@ -140,13 +141,14 @@ app.post("/signup", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await collection.insertOne({
+            fullName,          
             email,
             password: hashedPassword,
             createdAt: new Date()
         });
 
         const token = jwt.sign(
-            { id: result.insertedId, email },
+            { id: result.insertedId, email, fullName },
             process.env.JWT_SECRET,
             { expiresIn: "24h" }
         );
@@ -155,13 +157,22 @@ app.post("/signup", async (req, res) => {
             success: true,
             message: "User signed up successfully",
             token,
-            userId: result.insertedId
+            userId: result.insertedId,
+            fullName
         });
 
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 });
+
+app.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+})
 
 
 app.get("/", (req, res) => {
