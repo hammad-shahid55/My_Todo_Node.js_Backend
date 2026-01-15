@@ -11,7 +11,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
-const usersCollection=process.env.USERS_COLLECTION;
+const usersCollection = process.env.USERS_COLLECTION;
 
 
 app.use(express.json());
@@ -141,7 +141,7 @@ app.post("/signup", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const result = await collection.insertOne({
-            fullName,          
+            fullName,
             email,
             password: hashedPassword,
             createdAt: new Date()
@@ -169,10 +169,43 @@ app.post("/signup", async (req, res) => {
 app.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "Email and password are required" });
+        }
+
+        const db = await connection();
+        const collection = db.collection(usersCollection);
+
+        const user = await collection.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid email or password" });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: "Invalid email or password" });
+        }
+
+        const token = jwt.sign(
+            { id: user._id, email: user.email, fullName: user.fullName },
+            process.env.JWT_SECRET,
+            { expiresIn: "24h" }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            token,
+            userId: user._id,
+            fullName: user.fullName,
+        });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
-})
+});
+
 
 
 app.get("/", (req, res) => {
