@@ -3,6 +3,8 @@ import { connection, collectionName } from "./dbconfig.js";
 import cors from "cors";
 import { ObjectId } from "mongodb";
 import dotenv from "dotenv";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 
@@ -57,7 +59,7 @@ app.get("/tasks", async (req, res) => {
 app.delete("/delete-task/:id", async (req, res) => {
     const db = await connection();
     const collection = db.collection(collectionName);
-    const result = await collection.deleteOne({_id: new ObjectId(req.params.id)});
+    const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) });
     if (result) {
         res.send({
             message: "Task deleted successfully",
@@ -97,7 +99,7 @@ app.delete("/delete-all-tasks", async (req, res) => {
 app.put("/update-task/:id", async (req, res) => {
     const db = await connection();
     const collection = db.collection(collectionName);
-    const result = await collection.updateOne({_id: new ObjectId(req.params.id)}, {$set: req.body});
+    const result = await collection.updateOne({ _id: new ObjectId(req.params.id) }, { $set: req.body });
     if (result) {
         res.send({
             message: "Task updated successfully",
@@ -114,6 +116,52 @@ app.put("/update-task/:id", async (req, res) => {
 
 })
 
+
+app.post("/signup", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ message: "Email and password are required" });
+        }
+
+        if (!email.includes("@") || password.length < 6) {
+            return res.status(400).json({ message: "Invalid email or weak password" });
+        }
+
+        const db = await connection();
+        const collection = db.collection("users");
+
+        const existingUser = await collection.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const result = await collection.insertOne({
+            email,
+            password: hashedPassword,
+            createdAt: new Date()
+        });
+
+        const token = jwt.sign(
+            { id: result.insertedId, email },
+            process.env.JWT_SECRET,
+            { expiresIn: "24h" }
+        );
+
+        res.status(201).json({
+            success: true,
+            message: "User signed up successfully",
+            token,
+            userId: result.insertedId
+        });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+});
 
 
 app.get("/", (req, res) => {
