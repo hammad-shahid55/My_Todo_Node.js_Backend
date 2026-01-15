@@ -69,6 +69,26 @@ app.delete("/delete-task/:id", async (req, res) => {
 
 })
 
+app.delete("/delete-all-tasks", async (req, res) => {
+    const db = await connection();
+    const collection = db.collection(collectionName);
+    const result = await collection.deleteMany({});
+    if (result) {
+        res.send({
+            message: "All tasks deleted successfully",
+            success: true,
+            data: result
+        });
+    } else {
+        res.send({
+            message: "All tasks not deleted",
+            success: false,
+            data: result
+        });
+    }
+
+})
+
 app.put("/update-task/:id", async (req, res) => {
     const db = await connection();
     const collection = db.collection(collectionName);
