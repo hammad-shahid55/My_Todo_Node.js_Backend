@@ -1,10 +1,11 @@
 import express from "express";
 import { connection, collectionName } from "./dbconfig.js";
+import cors from "cors";
 const app = express();
 
 
 app.use(express.json());
-
+app.use(cors());
 
 
 app.post("/add-task", async (req, res) => {
