@@ -1,8 +1,16 @@
 import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
 
-const url ="mongodb+srv://shahidhammad179_db_user:NodejsTesting@clusternodejs.tdkxdo5.mongodb.net/?appName=ClusterNodejs";
-const dbName ="todo-backend";
-export const collectionName ="todo";
+dotenv.config();
+
+const url = process.env.MONGODB_URI;
+const dbName = process.env.DB_NAME || "todo-backend";
+export const collectionName = process.env.COLLECTION_NAME || "todo";
+
+if (!url) {
+    throw new Error("Missing MONGODB_URI environment variable");
+}
+
 const client = new MongoClient(url);
 
 

@@ -2,7 +2,12 @@ import express from "express";
 import { connection, collectionName } from "./dbconfig.js";
 import cors from "cors";
 import { ObjectId } from "mongodb";
+import dotenv from "dotenv";
+
+dotenv.config();
+
 const app = express();
+const PORT = process.env.PORT || 3200;
 
 
 app.use(express.json());
@@ -121,6 +126,6 @@ app.get("/", (req, res) => {
     )
 })
 
-app.listen(3200, () => {
-    console.log("Server is running on port 3200");
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 })
