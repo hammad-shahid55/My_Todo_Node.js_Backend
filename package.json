@@ -3,14 +3,8 @@
   "module": "index.js",
   "type": "module",
   "private": true,
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "vercel-start": "node index.js"
-  },
   "devDependencies": {
-    "@types/bun": "latest",
-    "nodemon": "^3.0.2"
+    "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
