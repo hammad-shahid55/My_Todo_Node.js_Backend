@@ -42,6 +42,13 @@ router.post("/signup", async (req, res) => {
             { expiresIn: "24h" }
         );
 
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
         res.status(201).json({
             success: true,
             message: "User signed up successfully",
@@ -81,6 +88,13 @@ router.post("/login", async (req, res) => {
             JWT_SECRET,
             { expiresIn: "24h" }
         );
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000
+        });
 
         res.status(200).json({
             success: true,
