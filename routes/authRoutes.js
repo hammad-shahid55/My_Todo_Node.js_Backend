@@ -7,7 +7,9 @@ import { USERS_COLLECTION, OTP_COLLECTION, JWT_SECRET } from "../config/env.js";
 
 const router = Router();
 
-const FIXED_OTP = "2468";
+const generateOTP = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+};
 
 router.post("/signup", async (req, res) => {
     try {
@@ -35,10 +37,11 @@ router.post("/signup", async (req, res) => {
         await otpCollection.deleteMany({ email });
 
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        const otp = generateOTP();
 
         await otpCollection.insertOne({
             email,
-            otp: FIXED_OTP,
+            otp,
             fullName,
             password: hashedPassword,
             expiresAt: otpExpiry,
@@ -47,8 +50,9 @@ router.post("/signup", async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "OTP sent to your email",
-            email
+            message: "OTP generated successfully",
+            email,
+            otp
         });
 
     } catch (error) {
@@ -132,15 +136,17 @@ router.post("/resend-otp", async (req, res) => {
         }
 
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        const newOtp = generateOTP();
 
         await otpCollection.updateOne(
             { email },
-            { $set: { otp: FIXED_OTP, expiresAt: otpExpiry } }
+            { $set: { otp: newOtp, expiresAt: otpExpiry } }
         );
 
         res.status(200).json({
             success: true,
-            message: "New OTP sent to your email"
+            message: "New OTP generated",
+            otp: newOtp
         });
 
     } catch (error) {
