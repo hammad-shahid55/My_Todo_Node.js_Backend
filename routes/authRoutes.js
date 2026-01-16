@@ -1,22 +1,14 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 import { connection } from "../dbconfig.js";
-import { USERS_COLLECTION, OTP_COLLECTION, JWT_SECRET, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } from "../config/env.js";
+import { USERS_COLLECTION, OTP_COLLECTION, JWT_SECRET, RESEND_API_KEY, RESEND_FROM_EMAIL } from "../config/env.js";
 
 const router = Router();
 
-const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: parseInt(SMTP_PORT) || 587,
-    secure: false,
-    auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS,
-    },
-});
+const resend = new Resend(RESEND_API_KEY);
 
 const generateOTP = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
@@ -59,8 +51,8 @@ router.post("/signup", async (req, res) => {
             createdAt: new Date()
         });
 
-        await transporter.sendMail({
-            from: SMTP_FROM || SMTP_USER,
+        await resend.emails.send({
+            from: RESEND_FROM_EMAIL,
             to: email,
             subject: "Your OTP for Signup Verification",
             html: `
@@ -171,8 +163,8 @@ router.post("/resend-otp", async (req, res) => {
             { $set: { otp, expiresAt: otpExpiry } }
         );
 
-        await transporter.sendMail({
-            from: SMTP_FROM || SMTP_USER,
+        await resend.emails.send({
+            from: RESEND_FROM_EMAIL,
             to: email,
             subject: "Your New OTP for Signup Verification",
             html: `
