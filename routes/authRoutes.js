@@ -1,18 +1,13 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { Resend } from "resend";
 
 import { connection } from "../dbconfig.js";
-import { USERS_COLLECTION, OTP_COLLECTION, JWT_SECRET, RESEND_API_KEY, RESEND_FROM_EMAIL } from "../config/env.js";
+import { USERS_COLLECTION, OTP_COLLECTION, JWT_SECRET } from "../config/env.js";
 
 const router = Router();
 
-const resend = new Resend(RESEND_API_KEY);
-
-const generateOTP = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-};
+const FIXED_OTP = "2468";
 
 router.post("/signup", async (req, res) => {
     try {
@@ -39,34 +34,15 @@ router.post("/signup", async (req, res) => {
 
         await otpCollection.deleteMany({ email });
 
-        const otp = generateOTP();
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
         await otpCollection.insertOne({
             email,
-            otp,
+            otp: FIXED_OTP,
             fullName,
             password: hashedPassword,
             expiresAt: otpExpiry,
             createdAt: new Date()
-        });
-
-        await resend.emails.send({
-            from: RESEND_FROM_EMAIL,
-            to: email,
-            subject: "Your OTP for Signup Verification",
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #333;">Welcome to Todo App!</h2>
-                    <p>Hello ${fullName},</p>
-                    <p>Your OTP for signup verification is:</p>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 32px; font-weight: bold; text-align: center; padding: 20px; border-radius: 10px; letter-spacing: 8px; margin: 20px 0;">
-                        ${otp}
-                    </div>
-                    <p style="color: #666;">This OTP is valid for 10 minutes.</p>
-                    <p style="color: #999; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-                </div>
-            `
         });
 
         res.status(200).json({
@@ -155,31 +131,12 @@ router.post("/resend-otp", async (req, res) => {
             return res.status(400).json({ success: false, message: "No pending signup found. Please signup again." });
         }
 
-        const otp = generateOTP();
         const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
 
         await otpCollection.updateOne(
             { email },
-            { $set: { otp, expiresAt: otpExpiry } }
+            { $set: { otp: FIXED_OTP, expiresAt: otpExpiry } }
         );
-
-        await resend.emails.send({
-            from: RESEND_FROM_EMAIL,
-            to: email,
-            subject: "Your New OTP for Signup Verification",
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #333;">New OTP Request</h2>
-                    <p>Hello ${existingOtpRecord.fullName},</p>
-                    <p>Your new OTP for signup verification is:</p>
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 32px; font-weight: bold; text-align: center; padding: 20px; border-radius: 10px; letter-spacing: 8px; margin: 20px 0;">
-                        ${otp}
-                    </div>
-                    <p style="color: #666;">This OTP is valid for 10 minutes.</p>
-                    <p style="color: #999; font-size: 12px;">If you didn't request this, please ignore this email.</p>
-                </div>
-            `
-        });
 
         res.status(200).json({
             success: true,
