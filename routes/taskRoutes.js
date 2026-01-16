@@ -97,17 +97,27 @@ router.delete("/delete-all-tasks", verifyToken, async (req, res) => {
     try {
         const db = await connection();
         const collection = db.collection(collectionName);
-        const result = await collection.deleteMany({ userId: req.user.id });
+        const { ids } = req.body;
+
+        let result;
+        if (ids && Array.isArray(ids) && ids.length > 0) {
+            result = await collection.deleteMany({
+                _id: { $in: ids.map(id => new ObjectId(id)) },
+                userId: req.user.id
+            });
+        } else {
+            result = await collection.deleteMany({ userId: req.user.id });
+        }
 
         if (result) {
             res.send({
-                message: "All tasks deleted successfully",
+                message: "Tasks deleted successfully",
                 success: true,
                 data: result
             });
         } else {
             res.send({
-                message: "All tasks not deleted",
+                message: "Tasks not deleted",
                 success: false,
                 data: result
             });
