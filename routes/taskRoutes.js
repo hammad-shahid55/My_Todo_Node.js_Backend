@@ -1,14 +1,19 @@
 import { Router } from "express";
 import { ObjectId } from "mongodb";
 import { connection, collectionName } from "../dbconfig.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = Router();
 
-router.post("/add-task", async (req, res) => {
+router.post("/add-task", verifyToken, async (req, res) => {
     try {
         const db = await connection();
         const collection = db.collection(collectionName);
-        const result = await collection.insertOne(req.body);
+        const taskData = {
+            ...req.body,
+            userId: req.user.id
+        };
+        const result = await collection.insertOne(taskData);
 
         if (result) {
             res.send({
@@ -32,11 +37,11 @@ router.post("/add-task", async (req, res) => {
     }
 });
 
-router.get("/tasks", async (req, res) => {
+router.get("/tasks", verifyToken, async (req, res) => {
     try {
         const db = await connection();
         const collection = db.collection(collectionName);
-        const result = await collection.find({}).toArray();
+        const result = await collection.find({ userId: req.user.id }).toArray();
 
         if (result) {
             res.send({
@@ -60,11 +65,11 @@ router.get("/tasks", async (req, res) => {
     }
 });
 
-router.delete("/delete-task/:id", async (req, res) => {
+router.delete("/delete-task/:id", verifyToken, async (req, res) => {
     try {
         const db = await connection();
         const collection = db.collection(collectionName);
-        const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) });
+        const result = await collection.deleteOne({ _id: new ObjectId(req.params.id), userId: req.user.id });
 
         if (result) {
             res.send({
@@ -88,11 +93,11 @@ router.delete("/delete-task/:id", async (req, res) => {
     }
 });
 
-router.delete("/delete-all-tasks", async (req, res) => {
+router.delete("/delete-all-tasks", verifyToken, async (req, res) => {
     try {
         const db = await connection();
         const collection = db.collection(collectionName);
-        const result = await collection.deleteMany({});
+        const result = await collection.deleteMany({ userId: req.user.id });
 
         if (result) {
             res.send({
@@ -116,11 +121,11 @@ router.delete("/delete-all-tasks", async (req, res) => {
     }
 });
 
-router.put("/update-task/:id", async (req, res) => {
+router.put("/update-task/:id", verifyToken, async (req, res) => {
     try {
         const db = await connection();
         const collection = db.collection(collectionName);
-        const result = await collection.updateOne({ _id: new ObjectId(req.params.id) }, { $set: req.body });
+        const result = await collection.updateOne({ _id: new ObjectId(req.params.id), userId: req.user.id }, { $set: req.body });
 
         if (result) {
             res.send({
